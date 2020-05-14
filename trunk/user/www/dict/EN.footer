@@ -821,6 +821,7 @@ menu5_16_23=Protocol param:
 menu5_16_24=Obfs:
 menu5_16_25=Obfs param:
 menu5_16_30=shadowsocks client type:
+menu5_16_31=server config
 menu5_17=dnsmasq-china-conf
 menu5_17_1=Update now
 menu5_17_2=Update

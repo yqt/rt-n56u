@@ -856,6 +856,13 @@
 			{"ss-tunnel_local_port","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_remote","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_mtu","",NULL, EVM_RESTART_SS_TUNNEL},
+			{"ss_reuse_port","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"scripts.ss_lan_spec","File",NULL, EVM_RESTART_SHADOWSOCKS},
+			{0,0,0,0}
+	};
+
+	struct variable variables_ShadowsocksServers[] = {
+			{"ss_server_config","",NULL, FALSE},
 			{0,0,0,0}
 	};
 #endif
@@ -980,6 +987,7 @@
 #endif
 #if defined(APP_SHADOWSOCKS)
 		{"ShadowsocksConf",		variables_ShadowsocksConf},
+		{"ShadowsocksServers",		variables_ShadowsocksServers},
 #endif
 		{"LANGUAGE",			variables_Language},
 		{0,0}

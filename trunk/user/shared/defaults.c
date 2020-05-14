@@ -559,6 +559,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_proto_param", ""},
 	{ "ss_obfs", "plain"},
 	{ "ss_obfs_param", ""},
+        { "ss_reuse_port", "0"},
 
 	{ "ss-tunnel_enable", "0" },
 	{ "ss-tunnel_local_port", "5301" },
@@ -568,6 +569,8 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_watchcat", "1" },
 	{ "ss_update_chnroute", "0" },
 	{ "ss_update_gfwlist", "0" },
+
+	{ "ss_server_config", "[]" },
 
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */

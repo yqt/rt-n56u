@@ -27,6 +27,13 @@ ss_method=$(nvram get ss_method)
 ss_password=$(nvram get ss_key)
 ss_mtu=$(nvram get ss_mtu)
 ss_timeout=$(nvram get ss_timeout)
+ss_reuse_port=$(nvram get ss_reuse_port)
+
+if [ "$ss_reuse_port" = "1" ]; then
+	ss_reuse_port="true"
+else
+	ss_reuse_port="false"
+fi
 
 ss_mode=$(nvram get ss_mode) #0:global;1:chnroute;2:gfwlist
 ss_router_proxy=$(nvram get ss_router_proxy)
@@ -57,6 +64,10 @@ get_wan_bp_list(){
 	echo "$bp"
 }
 
+get_lan_hosts_list(){
+	echo "-A /etc/storage/ss_lan_spec"
+}
+
 get_ipt_ext(){
 	if [ "$ss_lower_port_only" = "1" ]; then
 		echo '-e "--dport 22:1023"'
@@ -66,13 +77,20 @@ get_ipt_ext(){
 }
 
 func_start_ss_redir(){
-	sh -c "$ss_bin -c $ss_json_file $(get_arg_udp) & "
+	end=1
+	if [ "$ss_reuse_port" = "true" ]; then
+		end=$(grep -c ^processor /proc/cpuinfo)
+	fi
+	for i in $(seq 1 $end)
+	do
+		sh -c "$ss_bin -c $ss_json_file $(get_arg_udp) & "
+	done
 	return $?
 }
 
 func_start_ss_rules(){
 	ss-rules -f
-	sh -c "ss-rules -s $ss_server -l $ss_local_port $(get_wan_bp_list) -d SS_SPEC_WAN_AC $(get_ipt_ext) $(get_arg_out) $(get_arg_udp)"
+	sh -c "ss-rules -s $ss_server -l $ss_local_port $(get_wan_bp_list) $(get_lan_hosts_list) -d SS_SPEC_WAN_AC $(get_ipt_ext) $(get_arg_out) $(get_arg_udp)"
 	return $?
 }
 
@@ -90,7 +108,8 @@ cat > "$ss_json_file" <<EOF
     "obfs_param": "$ss_obfs_param",
     "local_address": "0.0.0.0",
     "local_port": $ss_local_port,
-    "mtu": $ss_mtu
+    "mtu": $ss_mtu,
+    "reuse_port": ${ss_reuse_port:-false}
 }
 
 EOF

@@ -30,6 +30,8 @@ usage() {
 		    -d <target>             the default target of lan access control
 		    -a <lan_hosts>          mac addr of access control, need a prefix to
 		                            define proxy type
+		    -A <lan_hosts_file>     a file whose content is mac addr of access
+		                            with a prefix to define proxy type
 		    -e <extra_args>         extra arguments for iptables
 		    -o                      apply the rules to the OUTPUT chain
 		    -O                      apply the global rules to the OUTPUT chain
@@ -122,18 +124,27 @@ CAT
 
 gen_lan_host_ipset_entry() {
 	for host in $LAN_HOSTS; do
-		case "${host:0:1}" in
-			b|B)
-				echo add ss_spec_src_bp ${host:2}
-				;;
-			g|G)
-				echo add ss_spec_src_fw ${host:2}
-				;;
-			n|N)
-				echo add ss_spec_src_ac ${host:2}
-				;;
-		esac
+		gen_single_lan_host_ipset_entry $host
 	done
+
+	for host in $(cat ${LAN_HOSTS_LIST:=/dev/null}); do
+		gen_single_lan_host_ipset_entry $host
+	done
+}
+
+gen_single_lan_host_ipset_entry() {
+	host=$1
+	case "${host:0:1}" in
+		b|B)
+			echo add ss_spec_src_bp ${host:2}
+			;;
+		g|G)
+			echo add ss_spec_src_fw ${host:2}
+			;;
+		n|N)
+			echo add ss_spec_src_ac ${host:2}
+			;;
+	esac
 }
 
 gen_special_purpose_ip() {
@@ -191,16 +202,34 @@ gen_prerouting_rules() {
 	done
 }
 
-while getopts ":s:l:S:L:B:b:W:w:I:d:a:e:oOuUfh" arg; do
+
+resolve_ips() {
+	for ip in $1; do
+		if expr "$ip" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+			echo $ip
+		else
+			tmp=$(nslookup $ip | awk '/^Address/ { print $3 }' | tail -1)
+			if [ -z $tmp ]; then
+				tmp=$(nslookup $ip | awk '/^Address/ { print $2 }' | tail -1)
+			fi
+			echo $tmp
+		fi
+	done
+}
+
+
+while getopts ":s:l:S:L:B:b:W:w:I:d:a:A:e:oOuUfh" arg; do
 	case "$arg" in
 		s)
-			server=$(for ip in $OPTARG; do echo $ip; done)
+			#server=$(for ip in $OPTARG; do echo $ip; done)
+			server=$(resolve_ips $OPTARG)
 			;;
 		l)
 			local_port=$OPTARG
 			;;
 		S)
-			SERVER=$(for ip in $OPTARG; do echo $ip; done)
+			#SERVER=$(for ip in $OPTARG; do echo $ip; done)
+			SERVER=$(resolve_ips $OPTARG)
 			;;
 		L)
 			LOCAL_PORT=$OPTARG
@@ -225,6 +254,9 @@ while getopts ":s:l:S:L:B:b:W:w:I:d:a:e:oOuUfh" arg; do
 			;;
 		a)
 			LAN_HOSTS=$OPTARG
+			;;
+		A)
+			LAN_HOSTS_LIST=$OPTARG
 			;;
 		e)
 			EXT_ARGS=$OPTARG
